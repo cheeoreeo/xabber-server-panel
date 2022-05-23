@@ -22,7 +22,7 @@ def get_modules():
             'name': apps.get_app_config(module).name,
             'verbose_name': apps.get_app_config(module).verbose_name,
             'url': url,
-            'version': get_spec(module).get('version')
+            'version': get_spec(module).get('VERSION')
         })
     return modules_list
 

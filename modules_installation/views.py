@@ -4,6 +4,7 @@ import re
 import tarfile
 from collections import OrderedDict
 from importlib import import_module
+from pathlib import Path
 from django.views.generic import TemplateView
 from django.urls import reverse
 from django.http import HttpResponseRedirect
@@ -72,33 +73,41 @@ class UploadModuleFileView(PageContextMixin, TemplateView):
     def handle_uploaded_file(self, f):
         try:
             tar = tarfile.open(fileobj=f.file, mode='r:gz')
-            module_spec = [el for el in tar.getmembers() if el.path.endswith('module.spec')]
-            if not module_spec:
+            members = tar.getmembers()
+            is_module_spec = [el for el in members if el.path.endswith('module.spec')]
+            if not is_module_spec:
                 tar.close()
                 return 'Something went wrong during the installation of this module: {}' \
                     .format('module does not have a required file module.spec.')
-            file_spec = tar.extractfile(module_spec[0]).read().decode('utf-8')
-            spec = convert_spec(file_spec)
-            spec_module_name = spec.get('name')
-            dir_module_name = module_spec[0].name.split('/')[1]
-            if spec_module_name != dir_module_name.strip():
+            module_spec_obj = is_module_spec.pop()
+            module_spec = tar.extractfile(module_spec_obj).read().decode('utf-8')
+            spec = convert_spec(module_spec)
+            spec_module_name = spec.get('NAME')
+            dir_module_name = None
+            for el in members:
+                if el.path.startswith('panel') and not el.path.endswith('panel'):
+                    dir_module_name = Path(el.path).name
+                    break
+            if spec_module_name != dir_module_name:
                 tar.close()
                 return 'Something went wrong during the installation of this module: {}' \
                     .format('mismatch between module folder name and module name in specification.')
             module_exist = 'modules.{}'.format(spec_module_name) in settings.INSTALLED_APPS
             if module_exist:
                 current_module_spec = get_spec(spec_module_name)
-                cur_ver = current_module_spec.get('version')
-                new_ver = spec.get('version')
+                cur_ver = current_module_spec.get('VERSION')
+                new_ver = spec.get('VERSION')
                 if is_older_version(cur_ver, new_ver):
                     tar.close()
                     return 'Something went wrong during the installation of this module: {}' \
                         .format('Version of loaded module is older than current or incorrect version format in spec.')
             subdir_and_files = []
-            for member in tar.getmembers():
+            for member in members:
                 if member.path.startswith('panel/'):
                     member.path = member.path[len('panel/'):]
                     subdir_and_files.append(member)
+            module_spec_obj.path = Path(dir_module_name, module_spec_obj.path)
+            subdir_and_files.append(module_spec_obj)
             tar.extractall(settings.MODULES_DIR, members=subdir_and_files)
             tar.close()
         except tarfile.ReadError:

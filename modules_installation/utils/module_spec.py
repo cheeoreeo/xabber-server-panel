@@ -3,7 +3,7 @@ from django.apps import apps
 
 
 def convert_spec(spec):
-    return {line.split('=')[0].strip(): line.split('=')[1].strip() for line in spec.splitlines()}
+    return {line.split('=')[0].strip().upper(): line.split('=')[1].strip() for line in spec.splitlines()}
 
 
 def get_spec(module):
@@ -18,18 +18,26 @@ def get_spec(module):
     return spec
 
 
-def is_older_version(cur_ver, new_ver):
-    default_len_ver = 3  # standard number of digits in split version, example: len('22.05.01'.split('.')) == 3
+default_len_ver = 3  # standard number of digits in split version, example: len('22.05.01'.split('.')) == 3
+
+
+def sanitize_version(version):
     try:
-        cur_ver = cur_ver.split('.')
-        new_ver = new_ver.split('.')
-        for split_ver in cur_ver, new_ver:
-            if len(split_ver) < default_len_ver:
-                missing_numbers = [0 for _ in range(default_len_ver - len(split_ver))]
-                split_ver.extend(missing_numbers)
-        for i in range(default_len_ver):
-            if int(cur_ver[i]) != int(new_ver[i]):
-                return int(cur_ver[i]) > int(new_ver[i])
-        return True
+        version = [int(el.strip()) for el in version.split('.') if int(el) or el == '0']
     except (AttributeError, ValueError):
-        return True
+        return [0, 0, 0]
+    if len(version) < default_len_ver:
+        missing_numbers = [0 for _ in range(default_len_ver - len(version))]
+        version.extend(missing_numbers)
+    else:
+        version = version[:3]
+    return version
+
+
+def is_older_version(cur_ver, new_ver):
+    cur_ver = sanitize_version(cur_ver)
+    new_ver = sanitize_version(new_ver)
+    for i in range(default_len_ver):
+        if cur_ver[i] != new_ver[i]:
+            return cur_ver[i] > new_ver[i]
+    return True
