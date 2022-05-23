@@ -10,21 +10,36 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Module</th>
-                        <th scope="col" style="padding-left: 24px"></th>
+                        <th scope="col">Version</th>
+                        <th scope="col" style="padding-left: 35px">Delete</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for module in modules %}
-                    <tr {% if module.deleted %}class="alert-danger"{% endif %}>
                         <td class="col-sm-1 table-data align-top" >{{ forloop.counter }}</td>
-                        <td class="col-sm-5 table-data align-top" >
-                            {{ module.name }}
+                        <td class="col-sm-5 table-data align-top" >{{ module.verbose_name }}</td>
+                        <td class="col-sm-4 table-data align-top" >{{ module.version }}</td>
+                        <td class="col-sm-2 table-data align-top" >
+                            <form onsubmit="return confirm('Delete module {{ module.verbose_name }}?')"  method="post">
+                                {% csrf_token %}
+                                    <button class="dropdown-item" name="delete_module" value="{{ module.name }}"
+                                    style="width:90px">
+                                        Delete
+                                    </button>
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
+            {% if delete_error %}
+                <div class="form-group row" style="margin-bottom: 24px;">
+                    <div class="col-sm-12" style="color:red">
+                        {{ delete_error }}
+                    </div>
+                </div>
+            {% endif %}
         <div class="row" style="padding-bottom: 16px; margin-top: 24px">
             <div class="col-sm-9">
             </div>

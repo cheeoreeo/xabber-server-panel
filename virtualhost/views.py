@@ -56,9 +56,9 @@ def update_module_permissions():
             EXCLUDED_PERMISSIONS_MODELS.extend(getattr(config, 'EXCLUDED_PERMISSIONS_MODELS'))
             EXCLUDED_PERMISSIONS_CODENAMES.extend(getattr(config, 'EXCLUDED_PERMISSIONS_CODENAMES'))
         except ImportError:
-            print('Module', module_name, 'does not exist')
+            pass
         except AttributeError:
-            print('Module', module_name, 'app config is improperly configured')
+            pass
 
 
 update_module_permissions()

@@ -1,5 +1,5 @@
 from importlib import import_module
-
+from modules_installation.utils.module_spec import get_spec
 from django.conf import settings
 from django import template
 from django.urls import reverse, NoReverseMatch
@@ -19,8 +19,10 @@ def get_modules():
             url = '/admin/server/modules/%s' % module + \
                   reverse('info', urlconf="modules." + module + '.urls')
         modules_list.append({
-            'name': apps.get_app_config(module).verbose_name,
-            'url': url
+            'name': apps.get_app_config(module).name,
+            'verbose_name': apps.get_app_config(module).verbose_name,
+            'url': url,
+            'version': get_spec(module).get('version')
         })
     return modules_list
 

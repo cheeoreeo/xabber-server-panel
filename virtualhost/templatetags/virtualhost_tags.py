@@ -20,9 +20,9 @@ def update_module_permissions_names():
             for key in renamed_models_dict:
                 RENAMING_MODELS_NAMES.update({key: renamed_models_dict[key]})
         except ImportError:
-            print('Module', module_name, 'does not exist')
+            pass
         except AttributeError:
-            print('Module', module_name, 'app config is improperly configured')
+            pass
 
 
 update_module_permissions_names()
