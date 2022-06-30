@@ -20,7 +20,7 @@ from .forms import UploadModuleFileForm
 from .utils.config_generator import make_xmpp_config
 from django.template.utils import get_app_template_dirs
 
-from .utils.module_spec import get_spec, is_older_version, convert_spec
+from .utils.module_spec import is_older_version, get_config, init_string_config
 
 SETTINGS_TAB_MODULES = 'modules'
 
@@ -81,8 +81,8 @@ class UploadModuleFileView(PageContextMixin, TemplateView):
                     .format('module does not have a required file module.spec.')
             module_spec_obj = is_module_spec.pop()
             module_spec = tar.extractfile(module_spec_obj).read().decode('utf-8')
-            spec = convert_spec(module_spec)
-            spec_module_name = spec.get('NAME')
+            new_config = init_string_config(module_spec)
+            spec_module_name = new_config.get('SPEC', 'name')
             dir_module_name = None
             for el in members:
                 if el.path.startswith('panel') and not el.path.endswith('panel'):
@@ -92,15 +92,17 @@ class UploadModuleFileView(PageContextMixin, TemplateView):
                 tar.close()
                 return 'Something went wrong during the installation of this module: {}' \
                     .format('mismatch between module folder name and module name in specification.')
+
             module_exist = 'modules.{}'.format(spec_module_name) in settings.INSTALLED_APPS
             if module_exist:
-                current_module_spec = get_spec(spec_module_name)
-                cur_ver = current_module_spec.get('VERSION')
-                new_ver = spec.get('VERSION')
+                cur_config = get_config(spec_module_name)
+                cur_ver = cur_config.get('SPEC', 'version')
+                new_ver = new_config.get('SPEC', 'version')
                 if is_older_version(cur_ver, new_ver):
                     tar.close()
                     return 'Something went wrong during the installation of this module: {}' \
                         .format('Version of loaded module is older than current or incorrect version format in spec.')
+
             subdir_and_files = []
             for member in members:
                 if member.path.startswith('panel/'):
